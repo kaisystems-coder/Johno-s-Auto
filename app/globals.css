@@ -1,0 +1,343 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ base */
+@layer base {
+  html {
+    background: #080a0a;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* clip, not hidden: hidden makes <html> a scroll container and breaks sticky.
+       See memory: horizontal-rail-widens-fixed-header. */
+    overflow-x: clip;
+  }
+  body {
+    @apply bg-jet font-sans text-white antialiased;
+    overflow-x: clip;
+    font-feature-settings: "cv11";
+  }
+  /* balance on headings only; `pretty` on every paragraph cost layout time. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  ::selection {
+    background: #b6e51b;
+    color: #080a0a;
+  }
+
+  /* Lime focus ring on every focusable thing; mouse clicks don't show it. */
+  :focus-visible {
+    outline: 2px solid #b6e51b;
+    outline-offset: 3px;
+  }
+  /* Anchor targets clear the fixed nav. */
+  section[id] {
+    scroll-margin-top: 76px;
+  }
+}
+
+@layer components {
+  .kicker {
+    @apply text-[12px] font-semibold uppercase text-lime;
+    letter-spacing: 0.22em;
+  }
+  .display {
+    @apply font-bold text-white;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .body-copy {
+    @apply text-[16px] text-white/72 sm:text-[17px];
+    line-height: 1.7;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Below-fold sections skip style/layout/paint until they near the
+     viewport. Web-font text layout of the whole page was the single biggest
+     main-thread cost at load (traced). `auto` remembers the real size once a
+     section has rendered, so anchors and scroll stay stable. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 1200px;
+  }
+
+  /* Select chevron, drawn in lime. */
+  .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23B6E51B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+
+  /* Grain: plain low-opacity layer, NO blend mode (blend modes re-composite
+     the page every frame; see memory: mix-blend-grain-perf). */
+  .grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+  }
+}
+
+/* ------------------------------------------------------------ keyframes */
+
+/* Hero load sequence: pure CSS so it never waits on hydration and can never
+   be stranded at opacity 0 by JS. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes word {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.42em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-rise {
+  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+.anim-word {
+  display: inline-block;
+  animation: word 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Swoosh line draw (paths carry pathLength="1"). */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.draw-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.6s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Ambient lime blooms. */
+@keyframes drift-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, -4%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-4%, 3%, 0) scale(0.96);
+  }
+}
+@keyframes drift-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(-8%, 6%, 0) scale(1.12);
+  }
+}
+.bloom-a {
+  animation: drift-a 22s ease-in-out infinite alternate;
+}
+.bloom-b {
+  animation: drift-b 17s ease-in-out infinite alternate;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-60 {
+  animation: spin 60s linear infinite;
+}
+
+/* Headlight glint: a lime streak crosses the hero once every 8s. */
+@keyframes sweep {
+  0% {
+    transform: translate3d(-130%, 0, 0) skewX(-18deg);
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  18% {
+    transform: translate3d(330%, 0, 0) skewX(-18deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(330%, 0, 0) skewX(-18deg);
+    opacity: 0;
+  }
+}
+.sweep {
+  animation: sweep 8s cubic-bezier(0.45, 0, 0.2, 1) 2.4s infinite both;
+}
+
+/* "Open now" status dot. */
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.ping {
+  animation: ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* WhatsApp pulse ring: understated. */
+@keyframes wa-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  70%,
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+.wa-pulse {
+  animation: wa-pulse 2.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Slow border glow on the form card (opacity only). */
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+.glow-pulse {
+  animation: glow 6s ease-in-out infinite;
+}
+
+/* Success-state tick + shutter draw. */
+.tick-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+}
+
+/* LCP-safe entrance: transform only, so the element paints (and counts as
+   LCP) on the very first frame. Used on the subhead and the form card. */
+@keyframes lift {
+  from {
+    transform: translate3d(0, 22px, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+.anim-lift {
+  animation: lift 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Hero loops pause once the hero is scrolled away (attribute set by JS). */
+[data-offscreen] .bloom-a,
+[data-offscreen] .bloom-b,
+[data-offscreen] .sweep,
+[data-offscreen] .spin-60,
+[data-offscreen] .glow-pulse,
+[data-offscreen] .ping {
+  animation-play-state: paused;
+}
+
+/* ------------------------------------------------- touch / small screens */
+/* Phones: no perpetual atmosphere loops, no grain, no sweep. They cost
+   main-thread style work every frame for decoration nobody can see at 390px.
+   See memory: hero-motion-mobile-cost. */
+@media (pointer: coarse), (max-width: 1023px) {
+  .grain,
+  .sweep {
+    display: none;
+  }
+  .bloom-a,
+  .bloom-b,
+  .glow-pulse {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .draw-line,
+  .tick-draw {
+    stroke-dashoffset: 0;
+  }
+  .sweep,
+  .ping,
+  .wa-pulse,
+  .bloom-a,
+  .bloom-b,
+  .spin-60,
+  .glow-pulse {
+    animation: none !important;
+  }
+  .sweep {
+    display: none;
+  }
+  /* Safety net: anything a JS reveal touched is shown, in place.
+     See memory: reduced-motion-css-kills-reveals. */
+  /* Only the motion-driven wrappers, never their descendants: a blanket
+     `[data-reveal] *` forced the photo tint/scrim layers to opacity 1 and
+     blacked out every image inside a reveal. */
+  [data-reveal],
+  [data-reveal-item] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -1,0 +1,9 @@
+node_modules
+.next
+.vercel
+*.log
+temporary screenshots
+brand_assets
+logo.jpg
+Johns_Auto_Services_Brand_Guidelines.pdf
+CLAUDE.md
